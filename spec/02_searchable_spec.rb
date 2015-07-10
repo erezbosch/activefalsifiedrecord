@@ -41,4 +41,9 @@ describe 'Searchable' do
   it '#where returns [] if nothing matches the criteria' do
     expect(Human.where(fname: 'Nowhere', lname: 'Man')).to eq([])
   end
+
+  it '#where stacks' do
+    matts = Human.where(fname: 'Matt').where(house_id: 1)
+    expect(matts.first.lname).to eq("Rubens")
+  end
 end

@@ -3,12 +3,7 @@ require 'active_support/inflector'
 
 class SQLObject
   def self.columns
-    DBConnection.execute2(<<-SQL).first.map(&:to_sym)
-      SELECT
-        *
-      FROM
-        #{table_name}
-    SQL
+    DBConnection.execute2("SELECT * FROM #{table_name}").first.map(&:to_sym)
   end
 
   def self.finalize!
@@ -41,22 +36,15 @@ class SQLObject
   end
 
   def self.find(id)
-    results = DBConnection.execute(<<-SQL, id: id)
-      SELECT
-        *
-      FROM
-        #{table_name}
-      WHERE
-        id = :id
-    SQL
-
-    return nil if results.empty?
-    new(results.first)
+    found = DBConnection.execute("SELECT * FROM #{table_name} WHERE id = ?", id)
+    return nil if found.empty?
+    new(found.first)
   end
 
   def initialize(params = {})
     params.each do |attr_name, value|
       attr_name = attr_name.to_sym
+
       unless self.class.columns.include?(attr_name)
         raise "unknown attribute '#{attr_name}'"
       end
@@ -71,7 +59,7 @@ class SQLObject
 
   def insert
     col_names = self.class.columns.join(", ")
-    question_marks = (["?"] * self.class.columns.length).join(", ")
+    question_marks = Array.new(self.class.columns.length, "?").join(", ")
 
     DBConnection.execute(<<-SQL, *attribute_values)
       INSERT INTO
