@@ -78,27 +78,67 @@ describe 'Associatable' do
   end
 
   describe '#has_many_through' do
-    before(:all) do
-      class House
-        has_many_through :cats, :humans, :cats
-        self.finalize!
+    context 'has_many => has_many' do
+      before(:all) do
+        class House
+          has_many_through :cats, :humans, :cats
+          self.finalize!
+        end
+      end
+
+      let(:house) { House.find(1) }
+
+      it 'adds getter method' do
+        expect(house).to respond_to(:cats)
+      end
+
+      it 'fetches associated `cats` for a `house`' do
+        cats = house.cats
+
+        expect(cats.first).to be_instance_of(Cat)
+        expect(cats.first.name).to eq('Breakfast')
+
+        expect(cats.last).to be_instance_of(Cat)
+        expect(cats.last.name).to eq('Earl')
       end
     end
 
-    let(:house) { House.find(1) }
+    context 'belongs_to => has_many' do
+      before(:all) do
+        class Dog < SQLObject
+          belongs_to :human, foreign_key: :owner_id
 
-    it 'adds getter method' do
-      expect(house).to respond_to(:cats)
-    end
+          finalize!
+        end
 
-    it 'fetches associated `cats` for a `house`' do
-      cats = house.cats
+        class Human < SQLObject
+          has_many :dogs, foreign_key: :owner_id
 
-      expect(cats.first).to be_instance_of(Cat)
-      expect(cats.first.name).to eq('Breakfast')
+          finalize!
+        end
 
-      expect(cats.last).to be_instance_of(Cat)
-      expect(cats.last.name).to eq('Earl')
+        class Cat < SQLObject
+          has_many_through :dogs, :human, :dogs
+
+          finalize!
+        end
+      end
+
+      let(:cat) { Cat.find(1) }
+
+      it 'adds getter method' do
+        expect(cat).to respond_to(:dogs)
+      end
+
+      it 'fetches associated `dogs` for a `cat`' do
+        dogs = cat.dogs
+
+        expect(dogs.first).to be_instance_of(Dog)
+        expect(dogs.first.name).to eq('Dog')
+
+        expect(dogs.last).to be_instance_of(Dog)
+        expect(dogs.last.name).to eq('Not a Dog')
+      end
     end
   end
 end
