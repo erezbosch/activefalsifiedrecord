@@ -18,7 +18,6 @@ module Searchable
     Relation.new(self).where(params)
   end
 
-
   class Relation < BasicObject
     def initialize(obj_class)
       @klass = obj_class
