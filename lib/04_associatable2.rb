@@ -32,15 +32,6 @@ module Associatable
     end
   end
 
-  # SCENARIOS
-  # many => many: house has many humans which have many cats
-  # belongs => many: cat belongs to human which has dogs
-  # many => belongs: house has many cats which belong to human
-  # 1 down
-  # 2 down
-  # 3...
-  # select * from 
-
   def has_many_through(name, through_name, source_name)
     define_method(name) do
       through_options = self.class.assoc_options[through_name]
@@ -69,8 +60,7 @@ module Associatable
         params[:two_k] = through_p_key
         params[:three_k] = through_p_key
         value = send(through_options.foreign_key)
-      else #through_many
-
+      end
 
       results = self.class.execute_sql_query(params, value)
 
