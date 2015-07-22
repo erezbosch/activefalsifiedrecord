@@ -1,7 +1,12 @@
 require_relative 'db_connection'
+require_relative 'searchable'
+require_relative 'associatable'
 require 'active_support/inflector'
 
 class SQLObject
+  extend Searchable
+  extend Associatable
+
   def self.columns
     DBConnection.execute2("SELECT * FROM #{table_name}").first.map(&:to_sym)
   end
@@ -86,5 +91,46 @@ class SQLObject
 
   def save
     id.nil? ? insert : update
+  end
+end
+
+module Searchable
+  def where!(params)
+    where_line = params.keys.map { |key| "#{key} = ?" }.join(" AND ")
+    parse_all(DBConnection.execute(<<-SQL, *params.values))
+      SELECT
+        *
+      FROM
+        #{table_name}
+      WHERE
+        #{where_line}
+    SQL
+  end
+
+  def where(params)
+    Relation.new(self).where(params)
+  end
+
+  class Relation < BasicObject
+    def initialize(obj_class)
+      @klass = obj_class
+    end
+
+    def where(params)
+      conditions.merge!(params)
+      self
+    end
+
+    def conditions
+      @conditions ||= {}
+    end
+
+    def method_missing(method_name, *args)
+      execute_search.send(method_name, *args)
+    end
+
+    def execute_search
+      @klass.where!(conditions)
+    end
   end
 end
