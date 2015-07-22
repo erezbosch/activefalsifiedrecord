@@ -1,4 +1,6 @@
 require_relative 'db_connection'
+require_relative 'searchable'
+require_relative 'associatable'
 require 'active_support/inflector'
 
 class SQLObject
@@ -87,4 +89,7 @@ class SQLObject
   def save
     id.nil? ? insert : update
   end
+
+  extend Searchable
+  extend Associatable
 end
